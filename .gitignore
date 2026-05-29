@@ -1,0 +1,26 @@
+node_modules/
+.env
+cache/tts/*.mp3
+docs/
+*.sqlite
+*.db
+Kokoro-FastAPI/
+
+# Local agent/development memory
+.agents/
+AGENTS.md
+MEMORY.md
+memory/
+
+# Private reference media and analysis artifacts
+cliproxy_generated_*.png
+
+# OS/editor noise
+.DS_Store
+
+# Netease Music skill local state. May contain cookies and private listening data.
+skills/netease-music/data/*
+!skills/netease-music/data/.gitkeep
+
+# Claudio local Netease login state. May contain cookies and private QR pages.
+data/netease/*

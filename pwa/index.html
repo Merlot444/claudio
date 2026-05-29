@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claudio FM — A private radio station</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Doto:wght@400;600&family=Space+Grotesk:wght@300;400&display=swap" rel="stylesheet">
+<style>
+html, body {
+  margin: 0; padding: 0; height: 100%; width: 100%;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  background: rgb(17,17,17);
+  color: rgb(17,17,17);
+}
+* { box-sizing: border-box; }
+
+/* ── Stage ──────────────────────────────────────────────────────── */
+.stage {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  overflow: hidden;
+  background: radial-gradient(rgb(17,18,26) 0%, rgb(10,10,16) 70%, rgb(7,7,11) 100%);
+}
+
+/* ── Fluid blobs ─────────────────────────────────────────────────── */
+.fluid {
+  position: absolute; border-radius: 50%;
+  filter: blur(142px) saturate(1.1);
+  opacity: 0.7; mix-blend-mode: screen;
+  pointer-events: none;
+  will-change: transform, filter;
+}
+.fluid.blue {
+  width: 70vmin; height: 70vmin;
+  left: 50%; top: 50%;
+  margin-left: -35vmin; margin-top: -35vmin;
+  background: radial-gradient(circle at 40% 40%, oklch(0.62 0.17 256) 0%, oklch(0.48 0.18 259) 40%, oklch(0.3 0.12 261 / 0) 72%);
+  animation: 26s cubic-bezier(.45,.05,.55,.95) 0s infinite flow-blue;
+}
+.fluid.violet {
+  width: 66vmin; height: 66vmin;
+  left: 50%; top: 50%;
+  margin-left: -33vmin; margin-top: -33vmin;
+  background: radial-gradient(circle, oklch(0.58 0.19 330) 0%, oklch(0.42 0.2 325) 42%, oklch(0.28 0.14 320 / 0) 72%);
+  animation: 34s cubic-bezier(.45,.05,.55,.95) 0s infinite flow-violet;
+}
+.fluid.accent {
+  width: 42vmin; height: 42vmin;
+  left: 50%; top: 50%;
+  margin-left: -21vmin; margin-top: -21vmin;
+  opacity: 0.55; filter: blur(114px) saturate(1.1);
+  background: radial-gradient(circle, oklch(0.7 0.18 293) 0%, oklch(0.5 0.18 288) 45%, oklch(0.3 0.12 283 / 0) 72%);
+  animation: 42s cubic-bezier(.45,.05,.55,.95) 0s infinite flow-accent;
+}
+@keyframes flow-blue {
+  0%   { transform: translate(-22vmin,-14vmin) scale(1)    rotate(0deg); }
+  20%  { transform: translate(8vmin,-22vmin)   scale(1.1)  rotate(40deg); }
+  40%  { transform: translate(24vmin,-4vmin)   scale(0.95) rotate(80deg); }
+  60%  { transform: translate(14vmin,18vmin)   scale(1.12) rotate(120deg); }
+  80%  { transform: translate(-10vmin,12vmin)  scale(0.98) rotate(160deg); }
+  100% { transform: translate(-22vmin,-14vmin) scale(1)    rotate(360deg); }
+}
+@keyframes flow-violet {
+  0%   { transform: translate(20vmin,16vmin)   scale(1.05) rotate(0deg); }
+  20%  { transform: translate(-12vmin,22vmin)  scale(0.94) rotate(-40deg); }
+  40%  { transform: translate(-26vmin,2vmin)   scale(1.14) rotate(-80deg); }
+  60%  { transform: translate(-10vmin,-18vmin) scale(0.92) rotate(-120deg); }
+  80%  { transform: translate(12vmin,-12vmin)  scale(1.08) rotate(-160deg); }
+  100% { transform: translate(20vmin,16vmin)   scale(1.05) rotate(-360deg); }
+}
+@keyframes flow-accent {
+  0%   { transform: translate(2vmin,-4vmin)   scale(1); }
+  25%  { transform: translate(-18vmin,6vmin)  scale(1.15); }
+  50%  { transform: translate(6vmin,18vmin)   scale(0.88); }
+  75%  { transform: translate(20vmin,-8vmin)  scale(1.1); }
+  100% { transform: translate(2vmin,-4vmin)   scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .fluid { animation-duration: 180s !important; } }
+
+.bg-grain {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(at 50% 55%, rgba(0,0,0,0) 0%, rgba(0,0,0,.15) 80%, rgba(0,0,0,.35) 100%);
+  pointer-events: none;
+}
+.bg-noise {
+  position: absolute; inset: 0; opacity: .05; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+/* ── Card ────────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  width: 616px; max-width: calc(100vw - 48px);
+  height: min(876px, calc(100vh - 48px));
+  border-radius: 28px; overflow: hidden;
+  box-shadow:
+    rgba(0,0,0,.5) 0px 40px 80px -20px,
+    rgba(0,0,0,.3) 0px 10px 24px -8px,
+    rgba(255,255,255,.06) 0px 0px 0px 1px;
+  display: flex; flex-direction: column;
+  background: rgb(255,255,255);
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  position: relative; flex: 0 0 auto; height: 232px;
+  background: linear-gradient(rgb(12,12,14) 0%, rgb(22,22,26) 100%);
+  color: rgb(255,255,255);
+  padding: 22px 24px 0; border-radius: 28px 28px 0 0; overflow: hidden;
+}
+.header::before {
+  content: ""; position: absolute; inset: 0 0 auto;
+  height: 130px;
+  background-image: radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 1px);
+  background-size: 16px 16px; pointer-events: none;
+  mask-image: linear-gradient(rgba(0,0,0,.95) 0%, rgba(0,0,0,.55) 55%, transparent 100%);
+}
+.header-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  position: relative; z-index: 2;
+}
+.header-name {
+  font-family: Doto, "Space Mono", monospace;
+  font-size: 32px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1;
+  color: rgb(255,255,255); display: flex; align-items: center; gap: 10px;
+}
+.header-avatar {
+  width: 28px; height: 28px; border-radius: 50%; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.18); flex-shrink: 0;
+  background: linear-gradient(135deg, oklch(0.62 0.17 256), oklch(0.58 0.19 330));
+  display: grid; place-items: center;
+  font-size: 13px; color: #fff; font-family: Inter, sans-serif;
+}
+.header-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.header-status {
+  font-size: 13px; font-weight: 400; color: rgb(41,255,184);
+  margin-top: 4px; padding-left: 38px;
+  display: flex; align-items: center; gap: 6px;
+}
+.dot-live {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: rgb(41,255,184); box-shadow: rgba(41,255,184,.6) 0 0 6px;
+  animation: 1.2s ease-in-out 0s infinite pulse; opacity: .9;
+}
+@keyframes pulse {
+  0%,100% { opacity: .4; transform: scale(.8); }
+  50%      { opacity: 1;  transform: scale(1.1); }
+}
+.header-time {
+  font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums;
+  color: rgba(255,255,255,.95);
+}
+.wave-wrap {
+  position: absolute; left: 0; right: 0; bottom: -2px; height: 170px;
+  z-index: 1; pointer-events: none;
+  mask-image: linear-gradient(transparent 0%, rgb(0,0,0) 30%, rgb(0,0,0) 100%);
+}
+.wave-wrap canvas { width: 100%; height: 100%; display: block; }
+
+/* ── Body ────────────────────────────────────────────────────────── */
+.body {
+  flex: 1 1 auto; display: flex; flex-direction: column;
+  background: rgb(255,255,255);
+  border-radius: 28px 28px 0 0; margin-top: -18px;
+  position: relative; z-index: 3; overflow: hidden;
+}
+
+/* ── Meta ────────────────────────────────────────────────────────── */
+.meta { padding: 20px 28px 16px; display: flex; flex-direction: column; gap: 5px; }
+.session-title {
+  font-size: 10px; font-weight: 700; color: rgb(160,160,168);
+  letter-spacing: .12em; text-transform: uppercase;
+  min-height: 12px; transition: opacity .4s;
+}
+.meta-name { font-size: 30px; font-weight: 600; line-height: 1.08; letter-spacing: -.02em; color: rgb(17,17,17); }
+.meta-sub {
+  font-size: 12px; font-weight: 400; color: rgb(138,138,144);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.meta-source {
+  font-size: 11px; font-weight: 500; color: rgb(168,168,175);
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  text-decoration: none; transition: color .15s; cursor: pointer;
+}
+.meta-source:hover { color: rgb(74,74,82); }
+.meta-source svg { flex-shrink: 0; }
+
+/* ── Replay button ───────────────────────────────────────────────── */
+.replay-btn {
+  background: none; border: none; cursor: pointer; padding: 2px 8px;
+  font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.45);
+  border-radius: 4px; transition: color .15s, background .15s;
+  letter-spacing: .03em; margin-left: 6px;
+}
+.replay-btn:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.1); }
+
+
+/* ── Transcript ──────────────────────────────────────────────────── */
+.transcript-wrap {
+  flex: 1 1 auto; margin: 0 16px;
+  background:
+    radial-gradient(circle, rgba(0,0,0,.08) 0.5px, transparent 0.5px) 0 0 / 12px 12px,
+    rgb(243,243,241);
+  border-radius: 18px; overflow: hidden; position: relative; min-height: 0;
+}
+.transcript-scroll {
+  height: 100%; overflow-y: auto;
+  padding: 20px 20px 40px; scroll-behavior: smooth;
+}
+.transcript-scroll::-webkit-scrollbar { width: 0; }
+.transcript-fade {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 40px;
+  background: linear-gradient(rgba(243,243,241,0) 0%, rgb(243,243,241) 100%);
+  pointer-events: none;
+}
+.turn { margin-bottom: 18px; transition: opacity .3s; }
+.turn.pending { opacity: .35; }
+.turn-head {
+  font-size: 11px; font-weight: 500; color: rgb(138,138,144);
+  letter-spacing: 0; margin-bottom: 5px;
+}
+.turn-head .who { color: rgb(106,106,112); }
+.turn.active .turn-head { color: rgb(17,17,17); }
+.turn.active .turn-head .who { color: rgb(17,17,17); }
+.turn-body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px; line-height: 1.58; font-weight: 400;
+  color: rgb(24,24,26); letter-spacing: 0; text-wrap: pretty;
+}
+.word { transition: color .15s, background .15s, box-shadow .2s; }
+.word.said   { color: rgb(24,24,26); }
+.word.current {
+  color: rgb(12,76,52);
+  background: rgba(41,255,184,.18);
+  box-shadow: rgba(41,255,184,.18) 0 0 0 1px;
+  border-radius: 3px; padding: 0 1px; margin: 0 -1px;
+}
+.word.future { color: rgb(181,181,186); }
+/* ── Main player (Music) ─────────────────────────────────────────── */
+.player {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px 18px; background: rgb(255,255,255);
+}
+.player-time { font-size: 13px; font-weight: 500; color: rgb(17,17,17); font-variant-numeric: tabular-nums; min-width: 34px; }
+.player-bars {
+  flex: 1 1 auto; height: 28px;
+  display: flex; align-items: center; gap: 2px;
+  cursor: pointer; position: relative; touch-action: none;
+}
+.player-bar {
+  flex: 1 1 auto;
+  background: rgb(207,207,209); border-radius: 999px;
+  transition: background .12s; pointer-events: none;
+}
+.player-bar.played { background: rgb(17,17,17); }
+.play-btn {
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 999px;
+  background: rgb(17,17,17); border: none; color: rgb(255,255,255);
+  display: grid; place-items: center; cursor: pointer;
+  transition: transform .12s, background .12s; padding: 0;
+}
+.play-btn:hover { transform: scale(1.04); }
+.play-btn:active { transform: scale(.96); }
+
+/* ── Request line input (floating) ───────────────────────────────── */
+.chat-bar {
+  position: fixed; left: 16px; bottom: 16px;
+  width: 392px; max-width: calc(100vw - 32px);
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+  background: rgba(13,13,16,.76); backdrop-filter: blur(24px) saturate(1.08);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+  padding: 9px 10px 9px 17px;
+  box-shadow:
+    rgba(0,0,0,.44) 0 16px 36px,
+    rgba(255,255,255,.05) 0 1px 0 inset;
+  z-index: 100;
+  transition: opacity .2s, transform .2s;
+}
+.chat-bar.hidden { opacity: 0; pointer-events: none; transform: translateY(8px); }
+#chat-input {
+  flex: 1; background: transparent; border: none; outline: none; resize: none;
+  color: rgba(255,255,255,.92); font-family: Inter, sans-serif;
+  font-size: 13px; line-height: 1.45; max-height: 84px; overflow-y: auto;
+  padding: 6px 0;
+}
+#chat-input::placeholder { color: rgba(255,255,255,.42); }
+#chat-send {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 999px;
+  background: rgb(255,255,255); border: none; color: rgb(17,17,17);
+  display: grid; place-items: center; cursor: pointer;
+  transition: transform .12s, background .15s; padding: 0;
+}
+#chat-send:hover { transform: scale(1.04); background: rgb(236,236,238); }
+#chat-send svg { width: 15px; height: 15px; }
+#chat-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Tweaks panel ────────────────────────────────────────────────── */
+.tweaks-toggle {
+  position: fixed; right: 16px; bottom: 16px;
+  width: 40px; height: 40px; border-radius: 999px;
+  background: rgba(20,20,22,.85); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+  display: grid; place-items: center; cursor: pointer; z-index: 1001;
+  transition: transform .15s, background .15s;
+  box-shadow: rgba(0,0,0,.35) 0 8px 20px;
+}
+.tweaks-toggle:hover { transform: scale(1.05); background: rgba(30,30,34,.9); }
+.tweaks-toggle svg { width: 18px; height: 18px; }
+.tweaks {
+  position: fixed; right: 16px; bottom: 68px; width: 280px;
+  background: rgba(20,20,22,.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 16px;
+  padding: 14px 16px; color: rgb(255,255,255); font-size: 13px;
+  z-index: 1000; box-shadow: rgba(0,0,0,.4) 0 12px 32px; display: none;
+}
+.tweaks.visible { display: block; }
+.tweaks h3 { font-size: 12px; font-weight: 600; margin: 0 0 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+.tweak-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.tweak-row:last-child { margin-bottom: 0; }
+.tweak-row label { font-size: 12px; color: rgba(255,255,255,.7); display: flex; justify-content: space-between; }
+.tweak-row input[type="range"] { width: 100%; accent-color: rgb(255,255,255); }
+.segmented {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  padding: 3px; border-radius: 999px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08);
+}
+.segmented button {
+  height: 30px; border: none; border-radius: 999px;
+  background: transparent; color: rgba(255,255,255,.58);
+  font: 600 12px/1 Inter, sans-serif; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.segmented button.active {
+  background: rgba(255,255,255,.92); color: rgb(17,17,17);
+}
+.swatches { display: flex; gap: 8px; }
+.swatch { width: 28px; height: 28px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: transform .12s; }
+.swatch:hover { transform: scale(1.08); }
+.swatch.active { border-color: rgba(255,255,255,.9); }
+
+/* ── Request line toggle ─────────────────────────────────────────── */
+.chat-toggle {
+  position: fixed; left: 16px; bottom: 16px;
+  min-width: 40px; height: 40px; border-radius: 999px;
+  background: rgba(20,20,22,.85); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; z-index: 1001;
+  transition: transform .15s, background .15s;
+  box-shadow: rgba(0,0,0,.35) 0 8px 20px;
+  padding: 0 13px;
+  font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+}
+.chat-toggle:hover { transform: scale(1.05); background: rgba(30,30,34,.9); }
+.chat-toggle svg { width: 16px; height: 16px; flex-shrink: 0; color: rgb(41,255,184); }
+.chat-toggle-label { display: inline-block; }
+.chat-toggle.hidden { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
+@media (max-width: 560px) {
+  .chat-toggle { padding: 0; width: 40px; min-width: 40px; }
+  .chat-toggle-label { display: none; }
+  .chat-bar { width: calc(100vw - 32px); }
+}
+
+/* ── Fullscreen toggle ───────────────────────────────────────────── */
+.fullscreen-toggle {
+  position: fixed; right: 16px; top: 16px;
+  width: 40px; height: 40px; border-radius: 999px;
+  background: rgba(20,20,22,.85); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+  display: grid; place-items: center; cursor: pointer; z-index: 1001;
+  transition: transform .15s, background .15s;
+  box-shadow: rgba(0,0,0,.35) 0 8px 20px; padding: 0;
+}
+.fullscreen-toggle:hover { transform: scale(1.05); background: rgba(30,30,34,.9); }
+.fullscreen-toggle svg { width: 18px; height: 18px; }
+.fullscreen-toggle .icon-exit { display: none; }
+.fullscreen-toggle.is-fullscreen .icon-enter { display: none; }
+.fullscreen-toggle.is-fullscreen .icon-exit { display: block; }
+
+/* ══════════════════════════════════════════════════════════════════
+   SKIN: Glass  —  Apple visionOS / spatial glassmorphism
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Stage: deep scene with rich colour pockets ── */
+[data-skin="glass"] .stage {
+  background:
+    radial-gradient(ellipse at 15% 85%, rgba(180,100,40,.55) 0%, transparent 48%),
+    radial-gradient(ellipse at 85% 10%, rgba(80,120,200,.50) 0%, transparent 48%),
+    radial-gradient(ellipse at 75% 75%, rgba(140,60,160,.40) 0%, transparent 45%),
+    radial-gradient(ellipse at 30% 20%, rgba(220,160,60,.45) 0%, transparent 45%),
+    linear-gradient(148deg, rgb(22,18,30) 0%, rgb(30,22,20) 55%, rgb(18,16,26) 100%);
+}
+[data-skin="glass"] .fluid.blue {
+  background: radial-gradient(circle at 40% 40%, oklch(0.68 0.22 240) 0%, oklch(0.52 0.24 245) 40%, oklch(0.34 0.15 248 / 0) 72%);
+  filter: blur(130px) saturate(1.4);
+  opacity: 0.82;
+  mix-blend-mode: screen;
+}
+[data-skin="glass"] .fluid.violet {
+  background: radial-gradient(circle, oklch(0.62 0.24 320) 0%, oklch(0.46 0.26 316) 42%, oklch(0.30 0.16 312 / 0) 72%);
+  filter: blur(130px) saturate(1.4);
+  opacity: 0.78;
+  mix-blend-mode: screen;
+}
+[data-skin="glass"] .fluid.accent {
+  background: radial-gradient(circle, oklch(0.75 0.20 55) 0%, oklch(0.58 0.22 50) 45%, oklch(0.38 0.14 48 / 0) 72%);
+  filter: blur(110px) saturate(1.4);
+  opacity: 0.70;
+  mix-blend-mode: screen;
+}
+[data-skin="glass"] .bg-grain {
+  background-image: radial-gradient(at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,.22) 80%, rgba(0,0,0,.45) 100%);
+}
+[data-skin="glass"] .bg-noise { opacity: .04; mix-blend-mode: overlay; }
+
+/* ── Card: near-invisible glass frame ── */
+[data-skin="glass"] .card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(60px) saturate(1.8) brightness(1.06);
+  -webkit-backdrop-filter: blur(60px) saturate(1.8) brightness(1.06);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow:
+    rgba(0,0,0,.55) 0px 40px 90px -20px,
+    rgba(255,255,255,.12) 0px 1px 0px 0px inset,
+    rgba(255,255,255,.06) 0px 0px 0px 1px inset;
+}
+
+/* ── Header: dark glass overlay ── */
+[data-skin="glass"] .header {
+  background: linear-gradient(rgba(8,6,14,.72) 0%, rgba(12,8,18,.60) 100%);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+[data-skin="glass"] .header::before {
+  background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px);
+}
+[data-skin="glass"] .header-avatar {
+  background: linear-gradient(135deg, oklch(0.68 0.22 240), oklch(0.62 0.24 320));
+  border-color: rgba(255,255,255,.22);
+}
+[data-skin="glass"] .header-status { color: rgba(255,255,255,.70); }
+[data-skin="glass"] .dot-live {
+  background: rgb(255,255,255);
+  box-shadow: rgba(255,255,255,.8) 0 0 8px;
+}
+[data-skin="glass"] .header-time { color: rgba(255,255,255,.80); }
+
+/* ── Body: fully transparent — glass shows through ── */
+[data-skin="glass"] .body { background: transparent; }
+
+/* ── Meta ── */
+[data-skin="glass"] .session-title { color: rgba(255,255,255,.42); }
+[data-skin="glass"] .meta-name { color: rgba(255,255,255,.96); }
+[data-skin="glass"] .meta-sub { color: rgba(255,255,255,.52); }
+[data-skin="glass"] .meta-source { color: rgba(255,255,255,.38); }
+[data-skin="glass"] .meta-source:hover { color: rgba(255,255,255,.72); }
+
+/* ── Transcript area ── */
+[data-skin="glass"] .transcript-wrap {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+}
+[data-skin="glass"] .transcript-fade {
+  background: linear-gradient(rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 100%);
+}
+
+/* ── Each turn = individual glass card ── */
+[data-skin="glass"] .turn {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+[data-skin="glass"] .turn.active {
+  background: rgba(255,255,255,.11);
+  border-color: rgba(255,255,255,.16);
+}
+[data-skin="glass"] .turn.pending { opacity: .28; }
+[data-skin="glass"] .turn-head { color: rgba(255,255,255,.38); }
+[data-skin="glass"] .turn-head .who { color: rgba(255,255,255,.52); }
+[data-skin="glass"] .turn.active .turn-head { color: rgba(255,255,255,.50); }
+[data-skin="glass"] .turn.active .turn-head .who { color: rgba(255,255,255,.75); }
+[data-skin="glass"] .turn-body { color: rgba(255,255,255,.88); }
+[data-skin="glass"] .word.said { color: rgba(255,255,255,.88); }
+[data-skin="glass"] .word.current {
+  color: rgb(255,255,255);
+  background: rgba(255,255,255,.18);
+  box-shadow: rgba(255,255,255,.22) 0 0 0 1px;
+}
+[data-skin="glass"] .word.future { color: rgba(255,255,255,.28); }
+
+/* ── Player: dark glass bottom bar ── */
+[data-skin="glass"] .player {
+  background: rgba(0,0,0,.22);
+  border-top: 1px solid rgba(255,255,255,.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+[data-skin="glass"] .player-time { color: rgba(255,255,255,.72); }
+[data-skin="glass"] .player-bar { background: rgba(255,255,255,.18); }
+[data-skin="glass"] .player-bar.played { background: rgba(255,255,255,.88); }
+[data-skin="glass"] .play-btn {
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
+  backdrop-filter: blur(12px);
+  color: rgba(255,255,255,.95);
+}
+[data-skin="glass"] .play-btn:hover {
+  background: rgba(255,255,255,.24);
+  transform: scale(1.04);
+}
+[data-skin="glass"] .play-btn:active { transform: scale(.96); }
+
+/* ── Floating buttons: dark glass pills ── */
+[data-skin="glass"] .tweaks-toggle,
+[data-skin="glass"] .chat-toggle,
+[data-skin="glass"] .fullscreen-toggle {
+  background: rgba(18,14,28,.65);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.80);
+  box-shadow: rgba(0,0,0,.45) 0 8px 24px, rgba(255,255,255,.06) 0 1px 0 inset;
+}
+[data-skin="glass"] .tweaks-toggle:hover,
+[data-skin="glass"] .chat-toggle:hover,
+[data-skin="glass"] .fullscreen-toggle:hover {
+  background: rgba(28,22,42,.75);
+  color: rgba(255,255,255,.95);
+}
+[data-skin="glass"] .chat-toggle svg { color: rgba(255,255,255,.80); }
+
+/* ── Chat bar: dark glass ── */
+[data-skin="glass"] .chat-bar {
+  background: rgba(18,14,28,.70);
+  backdrop-filter: blur(32px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: rgba(0,0,0,.50) 0 16px 40px, rgba(255,255,255,.06) 0 1px 0 inset;
+}
+[data-skin="glass"] #chat-input { color: rgba(255,255,255,.90); }
+[data-skin="glass"] #chat-input::placeholder { color: rgba(255,255,255,.35); }
+[data-skin="glass"] #chat-send {
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.90);
+}
+[data-skin="glass"] #chat-send:hover { background: rgba(255,255,255,.22); transform: scale(1.04); }
+
+/* ── Tweaks panel: dark glass ── */
+[data-skin="glass"] .tweaks {
+  background: rgba(18,14,28,.78);
+  backdrop-filter: blur(32px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.88);
+  box-shadow: rgba(0,0,0,.55) 0 16px 40px, rgba(255,255,255,.06) 0 1px 0 inset;
+}
+[data-skin="glass"] .tweaks h3 { color: rgba(255,255,255,.38); }
+[data-skin="glass"] .tweak-row label { color: rgba(255,255,255,.62); }
+[data-skin="glass"] .tweak-row input[type="range"] { accent-color: rgba(255,255,255,.80); }
+[data-skin="glass"] .segmented {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+}
+[data-skin="glass"] .segmented button { color: rgba(255,255,255,.45); }
+[data-skin="glass"] .segmented button.active {
+  background: rgba(255,255,255,.18);
+  color: rgba(255,255,255,.95);
+}
+[data-skin="glass"] .swatch { border-color: transparent; }
+[data-skin="glass"] .swatch.active { border-color: rgba(255,255,255,.70); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="fluid blue"></div>
+  <div class="fluid violet"></div>
+  <div class="fluid accent"></div>
+  <div class="bg-grain"></div>
+  <div class="bg-noise"></div>
+
+  <div class="card" id="fmCard">
+    <!-- Header -->
+    <div class="header" id="cardHeader">
+      <div class="header-top">
+        <div>
+          <div class="header-name">
+            <div class="header-avatar">C</div>
+            Claudio
+          </div>
+          <div class="header-status">
+            <span class="dot-live" id="dotLive" style="display:none"></span>
+            <span id="headerStatus">Paused</span>
+            <button class="replay-btn" id="replayBtn" style="display:none">↩ replay</button>
+          </div>
+        </div>
+        <div class="header-time" id="headerTime">—:—</div>
+      </div>
+      <div class="wave-wrap">
+        <canvas id="waveCanvas" width="1232" height="340"></canvas>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <!-- Meta -->
+      <div class="meta">
+        <div class="session-title" id="sessionTitle"></div>
+        <div class="meta-name" id="metaName">Your private<br>radio station</div>
+        <div class="meta-sub">
+          <span id="metaSub">Waiting for Claudio…</span>
+          <span class="meta-source" id="metaSource" style="display:none">
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M11.2 1.8v6.9c0 1.4-1 2.4-2.3 2.4-1.2 0-2.1-.8-2.1-1.9 0-1.1 1-1.9 2.1-1.9.4 0 .8.1 1.1.3V3.9L5.9 5.2v5.1c0 1.4-1 2.4-2.3 2.4-1.2 0-2.1-.8-2.1-1.9 0-1.1 1-1.9 2.1-1.9.4 0 .8.1 1.1.3V2.6l6.5-.8z"/>
+            </svg>
+            <span id="metaSourceText"></span>
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 2h5v5"/><path d="M8 2L2.5 7.5"/>
+            </svg>
+          </span>
+        </div>
+      </div><!-- .meta -->
+
+      <!-- Transcript -->
+      <div class="transcript-wrap">
+        <div class="transcript-scroll" id="transcriptScroll">
+          <div class="turn" id="emptyState">
+            <div class="turn-head"><span class="who">Claudio</span> · now</div>
+            <div class="turn-body">
+              <span class="word future">Tell</span><span> </span>
+              <span class="word future">me</span><span> </span>
+              <span class="word future">what</span><span> </span>
+              <span class="word future">you're</span><span> </span>
+              <span class="word future">in</span><span> </span>
+              <span class="word future">the</span><span> </span>
+              <span class="word future">mood</span><span> </span>
+              <span class="word future">for.</span>
+            </div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="transcript-fade"></div>
+      </div>
+
+      <!-- Main player: Music -->
+      <div class="player">
+        <div class="player-time" id="playerTime">0:00</div>
+        <div class="player-bars" id="scrubber"></div>
+        <button class="play-btn" id="playBtn" aria-label="Play / pause music">
+          <svg id="iconPause" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:none">
+            <rect x="3" y="2" width="2.5" height="10" rx="0.8" fill="currentColor"/>
+            <rect x="8.5" y="2" width="2.5" height="10" rx="0.8" fill="currentColor"/>
+          </svg>
+          <svg id="iconPlay" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M3.5 2.2 L11.5 7 L3.5 11.8 Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+    </div><!-- .body -->
+  </div><!-- .card -->
+</div><!-- .stage -->
+
+<!-- Fullscreen toggle -->
+<button class="fullscreen-toggle" id="fullscreenToggle" aria-label="Enter fullscreen" title="Fullscreen">
+  <svg class="icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+    <path d="M16 3h3a2 2 0 0 1 2 2v3"/>
+    <path d="M21 16v3a2 2 0 0 1-2 2h-3"/>
+    <path d="M8 21H5a2 2 0 0 1-2-2v-3"/>
+  </svg>
+  <svg class="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M8 3v3a2 2 0 0 1-2 2H3"/>
+    <path d="M16 3v3a2 2 0 0 0 2 2h3"/>
+    <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+    <path d="M3 16h3a2 2 0 0 1 2 2v3"/>
+  </svg>
+</button>
+
+<!-- Request line toggle -->
+<button class="chat-toggle" id="chatToggle" aria-label="Open request line" title="Request line">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M6.6 10.8c1.2-1.2 2.7-1.8 4.4-1.8s3.2.6 4.4 1.8"/>
+    <path d="M3.7 7.8C5.6 5.9 8.2 5 11 5s5.4.9 7.3 2.8"/>
+    <path d="M9.6 14.1c.4-.4.9-.6 1.4-.6s1 .2 1.4.6"/>
+    <path d="M11 18h.01"/>
+  </svg>
+  <span class="chat-toggle-label">Request line</span>
+</button>
+
+<!-- Chat bar -->
+<div class="chat-bar hidden" id="chatBar">
+  <textarea id="chat-input" rows="1" placeholder="Leave a note for Claudio…"></textarea>
+  <button id="chat-send" title="Patch in" aria-label="Patch in">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M5 12h13"/>
+      <path d="m13 6 6 6-6 6"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Tweaks -->
+<button class="tweaks-toggle" id="tweaksToggle" aria-label="Toggle tweaks">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</button>
+<div class="tweaks" id="tweaks">
+  <h3>Tweaks</h3>
+  <div class="tweak-row">
+    <label>Skin</label>
+    <div class="segmented" id="skinControl" role="group" aria-label="Skin">
+      <button type="button" data-skin-name="default" aria-pressed="true">Cosmic</button>
+      <button type="button" data-skin-name="glass" aria-pressed="false">Glass</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>DJ language</label>
+    <div class="segmented" id="djLanguageControl" role="group" aria-label="DJ language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>DJ volume <span id="lblDjVolume">100%</span></label>
+    <input type="range" id="inDjVolume" min="0" max="100" value="100">
+  </div>
+  <div class="tweak-row">
+    <label>Music volume <span id="lblMusicVolume">100%</span></label>
+    <input type="range" id="inMusicVolume" min="0" max="100" value="100">
+  </div>
+  <div class="tweak-row">
+    <label>Header tone</label>
+    <div class="swatches" id="swatches">
+      <div class="swatch active" data-bg="linear-gradient(rgb(12,12,14) 0%, rgb(22,22,26) 100%)" style="background:rgb(12,12,14)"></div>
+      <div class="swatch" data-bg="linear-gradient(rgb(11,18,32) 0%, rgb(18,28,50) 100%)" style="background:rgb(11,18,32)"></div>
+      <div class="swatch" data-bg="linear-gradient(rgb(26,15,30) 0%, rgb(38,22,44) 100%)" style="background:rgb(26,15,30)"></div>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Blue hue <span id="lblBlueHue">256°</span></label>
+    <input type="range" id="inBlueHue" min="180" max="320" value="256">
+  </div>
+  <div class="tweak-row">
+    <label>Violet hue <span id="lblVioletHue">330°</span></label>
+    <input type="range" id="inVioletHue" min="240" max="360" value="330">
+  </div>
+</div>
+
+<!-- Hidden audio elements -->
+<audio id="tts-audio" preload="auto"></audio>
+<audio id="music-audio" preload="auto"></audio>
+
+<script>
+/* ── Refs ─────────────────────────────────────────────────────────── */
+const ttsAudio   = document.getElementById('tts-audio');
+const musicAudio = document.getElementById('music-audio');
+const playBtn    = document.getElementById('playBtn');
+const iconPlay   = document.getElementById('iconPlay');
+const iconPause  = document.getElementById('iconPause');
+const playerTime   = document.getElementById('playerTime');
+const sessionTitleEl = document.getElementById('sessionTitle');
+const replayBtn    = document.getElementById('replayBtn');
+let lastTtsUrl = null;
+let lastReplaySegment = null;
+const scrubber   = document.getElementById('scrubber');
+const dotLive    = document.getElementById('dotLive');
+const headerStatus = document.getElementById('headerStatus');
+const headerTime   = document.getElementById('headerTime');
+const metaName   = document.getElementById('metaName');
+const metaSub    = document.getElementById('metaSub');
+const metaSource = document.getElementById('metaSource');
+const metaSourceText = document.getElementById('metaSourceText');
+const transcriptScroll = document.getElementById('transcriptScroll');
+const chatBar    = document.getElementById('chatBar');
+const chatInput  = document.getElementById('chat-input');
+const chatSend   = document.getElementById('chat-send');
+const chatToggle = document.getElementById('chatToggle');
+const fullscreenToggle = document.getElementById('fullscreenToggle');
+const emptyState = document.getElementById('emptyState');
+const inDjVolume = document.getElementById('inDjVolume');
+const inMusicVolume = document.getElementById('inMusicVolume');
+const lblDjVolume = document.getElementById('lblDjVolume');
+const lblMusicVolume = document.getElementById('lblMusicVolume');
+const djLanguageControl = document.getElementById('djLanguageControl');
+let djLanguage = localStorage.getItem('claudio:dj-language') === 'zh' ? 'zh' : 'en';
+let djVolume = Number(localStorage.getItem('claudio:dj-volume') || 100) / 100;
+let baseMusicVolume = Number(localStorage.getItem('claudio:music-volume') || 100) / 100;
+let ducking = false;
+let volumeFadeTimer = null;
+const BREATHING_GAP_MS = 500;
+const DUCKED_VOLUME_RATIO = 0.16;
+const SEGUE_LEAD_S = 15;   // start the DJ over the outro this many seconds before a song ends
+const REFILL_LEAD_S = 120; // ask Claudio for more music while there is still runway
+const REFILL_LOW_WATER_TRACKS = 2;
+const MAX_BUFFER_TRACKS = 6;
+const REFILL_BACKOFF_MS = 45000;
+function buildStartMessage() {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+  return `It's ${hour}:00 on a ${day}. You're on air — open the station. Pick whatever fits the moment.`;
+}
+let startingRadio = false;
+
+function syncDjLanguageControl() {
+  djLanguageControl.querySelectorAll('button').forEach(button => {
+    const active = button.dataset.lang === djLanguage;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function setDjLanguage(value) {
+  djLanguage = value === 'zh' ? 'zh' : 'en';
+  localStorage.setItem('claudio:dj-language', djLanguage);
+  syncDjLanguageControl();
+}
+
+syncDjLanguageControl();
+
+/* ── Clock ────────────────────────────────────────────────────────── */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  headerTime.textContent = `${h}:${m}`;
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+/* ── Volume controls ──────────────────────────────────────────────── */
+function pctLabel(v) {
+  return `${Math.round(v * 100)}%`;
+}
+
+function syncVolumeControls() {
+  ttsAudio.volume = djVolume;
+  inDjVolume.value = Math.round(djVolume * 100);
+  lblDjVolume.textContent = pctLabel(djVolume);
+  inMusicVolume.value = Math.round(baseMusicVolume * 100);
+  lblMusicVolume.textContent = pctLabel(baseMusicVolume);
+  if (!ducking) musicAudio.volume = baseMusicVolume;
+}
+
+function setDjVolume(value) {
+  djVolume = Math.max(0, Math.min(1, value));
+  localStorage.setItem('claudio:dj-volume', Math.round(djVolume * 100));
+  ttsAudio.volume = djVolume;
+  lblDjVolume.textContent = pctLabel(djVolume);
+}
+
+function setMusicVolume(value) {
+  baseMusicVolume = Math.max(0, Math.min(1, value));
+  localStorage.setItem('claudio:music-volume', Math.round(baseMusicVolume * 100));
+  lblMusicVolume.textContent = pctLabel(baseMusicVolume);
+  if (ducking) {
+    musicAudio.volume = duckedMusicVolume();
+  } else {
+    musicAudio.volume = baseMusicVolume;
+  }
+}
+
+syncVolumeControls();
+
+/* ── Fullscreen ───────────────────────────────────────────────────── */
+function fullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+async function enterFullscreen() {
+  const target = document.documentElement;
+  if (target.requestFullscreen) return target.requestFullscreen();
+  if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
+  throw new Error('Fullscreen API is not available in this browser.');
+}
+
+async function exitFullscreen() {
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+}
+
+function syncFullscreenButton() {
+  const active = Boolean(fullscreenElement());
+  fullscreenToggle.classList.toggle('is-fullscreen', active);
+  fullscreenToggle.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  fullscreenToggle.title = active ? 'Exit fullscreen' : 'Fullscreen';
+}
+
+fullscreenToggle.addEventListener('click', async () => {
+  try {
+    if (fullscreenElement()) {
+      await exitFullscreen();
+    } else {
+      await enterFullscreen();
+    }
+  } catch (err) {
+    console.error('[fullscreen]', err);
+  } finally {
+    syncFullscreenButton();
+  }
+});
+document.addEventListener('fullscreenchange', syncFullscreenButton);
+document.addEventListener('webkitfullscreenchange', syncFullscreenButton);
+syncFullscreenButton();
+
+/* ── Bar visualizer ───────────────────────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let playing = false;
+
+  const BAR_COUNT = 80;
+  const BAR_GAP = 4;
+  const barW = (W - BAR_GAP * (BAR_COUNT - 1)) / BAR_COUNT;
+
+  // Each bar has independent phase & speed for organic movement
+  const bars = Array.from({ length: BAR_COUNT }, (_, i) => ({
+    phase:  Math.random() * Math.PI * 2,
+    speed:  0.018 + Math.random() * 0.022,
+    noiseX: Math.random() * 100,
+    height: 0,
+    target: 0,
+  }));
+
+  let t = 0;
+
+  function pseudoNoise(x, t) {
+    return (Math.sin(x * 0.3 + t) + Math.sin(x * 0.7 - t * 1.3) +
+            Math.sin(x * 1.1 + t * 0.7) + Math.sin(x * 0.17 + t * 2.1)) / 4;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    bars.forEach((bar, i) => {
+      const noise = pseudoNoise(i * 0.4, t);
+      const normalized = (noise + 1) / 2; // 0–1
+
+      if (playing) {
+        // Taller, livelier bars when playing
+        const base = 0.08 + 0.12 * Math.abs(Math.sin(i * 0.19));
+        bar.target = (base + normalized * 0.78) * H;
+      } else {
+        // Short idle ripple when paused
+        bar.target = (0.03 + normalized * 0.10) * H;
+      }
+
+      // Smooth lerp toward target
+      bar.height += (bar.target - bar.height) * 0.14;
+
+      const x = i * (barW + BAR_GAP);
+      const bh = Math.max(2, bar.height);
+      const y = H - bh;
+
+      const alpha = playing ? 0.55 + 0.35 * normalized : 0.25 + 0.15 * normalized;
+      const wc = document.documentElement.dataset.skin === 'glass' ? '255,255,255' : '41,255,184';
+      ctx.fillStyle = `rgba(${wc},${alpha.toFixed(2)})`;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, bh, [2, 2, 0, 0]);
+      ctx.fill();
+    });
+
+    t += 0.022;
+    requestAnimationFrame(draw);
+  }
+
+  // roundRect polyfill for older browsers
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      const radius = Array.isArray(r) ? r[0] : r;
+      this.moveTo(x + radius, y);
+      this.lineTo(x + w - radius, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + radius);
+      this.lineTo(x + w, y + h);
+      this.lineTo(x, y + h);
+      this.lineTo(x, y + radius);
+      this.quadraticCurveTo(x, y, x + radius, y);
+      this.closePath();
+    };
+  }
+
+  draw();
+  window._setWavePlaying = (v) => { playing = v; };
+})();
+
+/* ── Scrubber bars ────────────────────────────────────────────────── */
+const BAR_COUNT = 60;
+const waveHeights = Array.from({length: BAR_COUNT}, (_,i) => {
+  const x = i / BAR_COUNT;
+  return 4 + 18 * Math.abs(Math.sin(i * 0.41) * Math.cos(i * 0.17));
+});
+(function buildScrubber() {
+  waveHeights.forEach(h => {
+    const b = document.createElement('div');
+    b.className = 'player-bar';
+    b.style.height = h + 'px';
+    scrubber.appendChild(b);
+  });
+})();
+const scrubberBars = [...scrubber.querySelectorAll('.player-bar')];
+
+function updateScrubber(pct) {
+  const played = Math.floor(pct * BAR_COUNT);
+  scrubberBars.forEach((b, i) => {
+    b.classList.toggle('played', i < played);
+  });
+}
+
+/* ── Format time ──────────────────────────────────────────────────── */
+function fmt(s) {
+  if (!isFinite(s)) return '—';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+/* ── Music player ─────────────────────────────────────────────────── */
+function setRadioStatus(status) {
+  headerStatus.textContent = status;
+  dotLive.style.display = ['On Air', 'Speaking', 'Playing'].includes(status) ? '' : 'none';
+  window._setWavePlaying(['Speaking', 'Playing'].includes(status));
+}
+
+function setPlaying(v) {
+  iconPlay.style.display  = v ? 'none' : '';
+  iconPause.style.display = v ? '' : 'none';
+  if (!ttsAudio.paused && !ttsAudio.ended) return;
+  setRadioStatus(v ? 'Playing' : 'Paused');
+}
+
+musicAudio.addEventListener('play',  () => setPlaying(true));
+musicAudio.addEventListener('pause', () => setPlaying(false));
+musicAudio.addEventListener('ended', () => {
+  console.info('[music] ended', {
+    title: metaName.textContent,
+    duration: musicAudio.duration,
+    currentTime: musicAudio.currentTime,
+  });
+  if (!playNext()) setRadioStatus('Paused');
+});
+musicAudio.addEventListener('loadedmetadata', () => {
+  console.info('[music] metadata', {
+    title: metaName.textContent,
+    duration: musicAudio.duration,
+    src: musicAudio.currentSrc,
+  });
+  maybeRefillAhead();
+});
+musicAudio.addEventListener('error', () => {
+  console.warn('[music] playback failed', musicAudio.error);
+  addTurn('Claudio', "That link dropped out. I'll skip ahead and keep the set moving.");
+  if (!playNext()) setRadioStatus('Paused');
+});
+/* ── Prefetch next track ──────────────────────────────────────────── */
+const prefetchEl = document.createElement('audio');
+prefetchEl.preload = 'auto';
+let prefetchedUrl = null;
+
+function maybePrefetch() {
+  if (queueIdx >= queue.length - 1) return;
+  const nextUrl = queue[queueIdx + 1].streamUrl;
+  if (prefetchedUrl === nextUrl) return;
+  prefetchedUrl = nextUrl;
+  prefetchEl.src = nextUrl;
+  prefetchEl.load();
+  console.info('[prefetch]', nextUrl.slice(0, 80));
+}
+
+musicAudio.addEventListener('timeupdate', () => {
+  const dur = musicAudio.duration || 0;
+  const cur = musicAudio.currentTime;
+  playerTime.textContent = fmt(cur);
+  if (dur > 0) {
+    updateScrubber(cur / dur);
+    const remaining = dur - cur;
+    if (remaining <= REFILL_LEAD_S) maybeRefillAhead();
+    if (remaining <= 10) maybePrefetch();
+    if (remaining <= SEGUE_LEAD_S) maybeStartOutroTalk();
+  }
+});
+
+playBtn.addEventListener('click', async () => {
+  if (musicAudio.src && musicAudio.paused) {
+    musicAudio.play().catch(console.error);
+    return;
+  }
+  if (!musicAudio.paused) {
+    musicAudio.pause();
+    return;
+  }
+  await startRadio();
+});
+
+scrubber.addEventListener('click', e => {
+  if (!musicAudio.src || !musicAudio.duration) return;
+  const r = scrubber.getBoundingClientRect();
+  const pct = (e.clientX - r.left) / r.width;
+  musicAudio.currentTime = pct * musicAudio.duration;
+});
+
+/* ── TTS ducking ──────────────────────────────────────────────────── */
+function fadeMusicVolume(target, ms = 260) {
+  clearInterval(volumeFadeTimer);
+  const start = musicAudio.volume;
+  const startedAt = performance.now();
+  volumeFadeTimer = setInterval(() => {
+    const pct = Math.min(1, (performance.now() - startedAt) / ms);
+    musicAudio.volume = start + (target - start) * pct;
+    if (pct >= 1) {
+      clearInterval(volumeFadeTimer);
+      volumeFadeTimer = null;
+    }
+  }, 24);
+}
+function duckedMusicVolume() {
+  return baseMusicVolume * DUCKED_VOLUME_RATIO;
+}
+function duckMusic() {
+  if (!musicAudio.src || musicAudio.paused) return;
+  ducking = true;
+  fadeMusicVolume(duckedMusicVolume());
+}
+function restoreMusicVolume() {
+  if (!ducking) return;
+  ducking = false;
+  fadeMusicVolume(baseMusicVolume);
+}
+function afterTtsFinished() {
+  finishKaraoke();
+  restoreMusicVolume();
+  if (!musicAudio.paused && !musicAudio.ended) {
+    setRadioStatus('Playing');
+  } else {
+    setRadioStatus('Paused');
+  }
+}
+ttsAudio.addEventListener('play',  () => { setRadioStatus('Speaking'); duckMusic(); });
+ttsAudio.addEventListener('pause', () => { if (!ttsAudio.ended) restoreMusicVolume(); });
+ttsAudio.addEventListener('ended', afterTtsFinished);
+ttsAudio.addEventListener('timeupdate', () => advanceKaraoke(ttsAudio.currentTime, ttsAudio.duration || 0));
+
+/* ── Transcript ───────────────────────────────────────────────────── */
+let karaokeWords = [];
+
+function transcriptTokens(text) {
+  return [...String(text || '').matchAll(/(\s+)|([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}])|([^\s\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+)/gu)]
+    .map(match => ({ text: match[0], word: !match[1] }));
+}
+
+function scrollTranscriptToBottom(behavior = 'smooth') {
+  requestAnimationFrame(() => {
+    transcriptScroll.scrollTo({
+      top: transcriptScroll.scrollHeight,
+      behavior,
+    });
+  });
+}
+
+function addTurn(speaker, text, timeLabel = 'now') {
+  if (emptyState) emptyState.remove();
+  const displayTime = typeof timeLabel === 'number' ? fmt(timeLabel) : timeLabel;
+
+  const turn = document.createElement('div');
+  turn.className = 'turn active';
+
+  const head = document.createElement('div');
+  head.className = 'turn-head';
+  head.innerHTML = `<span class="who">${speaker}</span> · ${displayTime}`;
+  turn.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className = 'turn-body';
+
+  const tokens = transcriptTokens(text);
+  karaokeWords = [];
+
+  tokens.forEach(token => {
+    if (!token.word) {
+      body.appendChild(document.createTextNode(token.text));
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = 'word future';
+    span.textContent = token.text;
+    body.appendChild(span);
+    karaokeWords.push({ el: span, idx: karaokeWords.length });
+  });
+
+  turn.appendChild(body);
+  transcriptScroll.insertBefore(turn, transcriptScroll.lastElementChild);
+
+  // Mark previous turns as non-active
+  [...transcriptScroll.querySelectorAll('.turn.active')].forEach(t => {
+    if (t !== turn) t.classList.remove('active');
+  });
+
+  scrollTranscriptToBottom();
+  return karaokeWords.length;
+}
+
+function resetProgramClock() {
+  programClockStartedAt = Date.now();
+}
+
+function programTimeLabel() {
+  if (!programClockStartedAt) resetProgramClock();
+  return fmt(Math.max(0, (Date.now() - programClockStartedAt) / 1000));
+}
+
+function addSegmentTurn(segment) {
+  return addTurn('Claudio', segment.text || '', programTimeLabel());
+}
+
+function advanceKaraoke(cur, dur) {
+  if (!karaokeWords.length || dur <= 0) return;
+  const pct = cur / dur;
+  const total = karaokeWords.length;
+  const currentIdx = Math.min(Math.floor(pct * total), total - 1);
+  karaokeWords.forEach(({ el }, i) => {
+    if (i < currentIdx) { el.className = 'word said'; }
+    else if (i === currentIdx) { el.className = 'word current'; }
+    else { el.className = 'word future'; }
+  });
+}
+
+function finishKaraoke() {
+  karaokeWords.forEach(({ el }) => {
+    el.className = 'word said';
+  });
+}
+
+function addUserTurn(text) {
+  if (emptyState) emptyState.remove();
+  const turn = document.createElement('div');
+  turn.className = 'turn';
+  turn.innerHTML = `
+    <div class="turn-head"><span class="who">You</span> · now</div>
+    <div class="turn-body"><span class="word said">${text.replace(/</g,'&lt;')}</span></div>`;
+  transcriptScroll.insertBefore(turn, transcriptScroll.lastElementChild);
+  scrollTranscriptToBottom();
+}
+
+function addCallerTurn(text) {
+  return addTurn('Caller', text, programTimeLabel());
+}
+
+function playRequestLineConnect() {
+  duckMusic();
+  setRadioStatus('Speaking');
+  return new Promise(resolve => {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) {
+      setTimeout(resolve, 220);
+      return;
+    }
+
+    const ctx = new AudioCtx();
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, ctx.currentTime);
+    master.gain.exponentialRampToValueAtTime(Math.max(0.0001, 0.16 * djVolume), ctx.currentTime + 0.025);
+    master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.62);
+    master.connect(ctx.destination);
+
+    const click = ctx.createOscillator();
+    click.type = 'square';
+    click.frequency.setValueAtTime(1180, ctx.currentTime);
+    click.connect(master);
+    click.start(ctx.currentTime);
+    click.stop(ctx.currentTime + 0.055);
+
+    const tone = ctx.createOscillator();
+    tone.type = 'sine';
+    tone.frequency.setValueAtTime(540, ctx.currentTime + 0.12);
+    tone.frequency.linearRampToValueAtTime(710, ctx.currentTime + 0.34);
+    tone.connect(master);
+    tone.start(ctx.currentTime + 0.12);
+    tone.stop(ctx.currentTime + 0.5);
+
+    setTimeout(() => {
+      ctx.close().catch(() => {});
+      resolve();
+    }, 680);
+  });
+}
+
+async function requestCallerTts(text) {
+  const res = await fetch('/api/tts/caller', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Caller TTS failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+function playCallerVoice(ttsUrl) {
+  return new Promise(resolve => {
+    if (!ttsUrl) {
+      resolve();
+      return;
+    }
+    const done = () => resolve();
+    ttsAudio.addEventListener('ended', done, { once: true });
+    ttsAudio.addEventListener('error', done, { once: true });
+    ttsAudio.src = ttsUrl;
+    ttsAudio.play().catch(err => {
+      console.error('[caller-tts-play]', err);
+      afterTtsFinished();
+      resolve();
+    });
+  });
+}
+
+/* ── Replay ───────────────────────────────────────────────────────── */
+replayBtn.addEventListener('click', () => {
+  const replayUrl = lastReplaySegment?.ttsUrl || lastTtsUrl;
+  if (!replayUrl) return;
+  ttsAudio.src = replayUrl;
+  ttsAudio.play().catch(console.error);
+});
+
+/* ── Queue ────────────────────────────────────────────────────────── */
+let queue = [], queueIdx = 0;
+let autoRefilling = false;
+let segueStarted = false;     // the DJ already spoke over the current song's outro
+let scriptSegments = [];
+let handledSegmentIds = new Set();
+let programClockStartedAt = null;
+let currentProgramId = null;
+let lastRefillAt = 0;
+
+function segmentKey(segment) {
+  if (!segment) return '';
+  return segment.id || [
+    segment.type,
+    segment.position,
+    segment.trackIndex,
+    segment.afterTrackIndex,
+    segment.beforeTrackIndex,
+    segment.text,
+  ].join('|');
+}
+
+function markSegmentHandled(segment) {
+  const key = segmentKey(segment);
+  if (key) handledSegmentIds.add(key);
+}
+
+function wasSegmentHandled(segment) {
+  const key = segmentKey(segment);
+  return key && handledSegmentIds.has(key);
+}
+
+function findSegment(matchFn) {
+  return scriptSegments.find(segment => !wasSegmentHandled(segment) && matchFn(segment));
+}
+
+function findSegments(matchFn) {
+  return scriptSegments.filter(segment => !wasSegmentHandled(segment) && matchFn(segment));
+}
+
+// Claudio speaks: show a single script segment and play its own voice asset.
+function speakSegmentObject(segment, onEnd) {
+  if (!segment) { if (onEnd) onEnd(); return; }
+  if (wasSegmentHandled(segment)) { if (onEnd) onEnd(); return; }
+  markSegmentHandled(segment);
+
+  if (segment.type === 'silence' || !segment.text) {
+    if (onEnd) onEnd();
+    return;
+  }
+  addSegmentTurn(segment);
+  if (!segment.ttsUrl) {
+    if (onEnd) onEnd();
+    return;
+  }
+  lastTtsUrl = segment.ttsUrl;
+  lastReplaySegment = segment;
+  replayBtn.style.display = '';
+  ttsAudio.src = segment.ttsUrl;
+  if (onEnd) ttsAudio.addEventListener('ended', onEnd, { once: true });
+  ttsAudio.play().catch(err => { console.error(err); afterTtsFinished(); if (onEnd) onEnd(); });
+}
+
+function speakSegmentSequence(segments, onEnd) {
+  const pending = segments.filter(segment => segment && !wasSegmentHandled(segment));
+  if (pending.some(segment => segment.resetClockOnSpeak)) resetProgramClock();
+  function playOne() {
+    const segment = pending.shift();
+    if (!segment) {
+      if (onEnd) onEnd();
+      return;
+    }
+    speakSegmentObject(segment, playOne);
+  }
+  playOne();
+}
+
+function speakSegment(transcript, ttsUrl, onEnd) {
+  speakSegmentObject({
+    id: `legacy_${Date.now()}`,
+    type: 'quick_touch',
+    position: 'immediate',
+    text: transcript,
+    ttsUrl,
+  }, onEnd);
+}
+
+function isOutroWindowOpen() {
+  if (!musicAudio.src || musicAudio.paused || musicAudio.ended) return false;
+  const dur = musicAudio.duration || 0;
+  const cur = musicAudio.currentTime || 0;
+  return dur > 0 && (dur - cur) <= SEGUE_LEAD_S;
+}
+
+// Called in the last seconds of a song: bring the DJ in over the fade, like real radio.
+function maybeStartOutroTalk() {
+  if (segueStarted) return;
+  if (!ttsAudio.paused && !ttsAudio.ended) return; // already talking
+  if (!isOutroWindowOpen()) return;
+
+  const seamSegments = findSegments(segment =>
+    segment.position === 'between_tracks' &&
+    segment.afterTrackIndex === queueIdx &&
+    segment.beforeTrackIndex === queueIdx + 1
+  );
+  if (seamSegments.length) {
+    segueStarted = true;
+    speakSegmentSequence(seamSegments);
+    return;
+  }
+
+  if (queueIdx < queue.length - 1) {
+    const next = queue[queueIdx + 1];
+    if (next && next.introTtsUrl) {
+      segueStarted = true;
+      speakSegment(next.introTranscript, next.introTtsUrl);
+      return;
+    }
+  }
+
+  const pendingComments = findSegments(segment =>
+    ['immediate', 'after_track'].includes(segment.position) &&
+    (segment.trackIndex === undefined || segment.trackIndex === queueIdx)
+  );
+  if (pendingComments.length) {
+    segueStarted = true;
+    speakSegmentSequence(pendingComments);
+  }
+}
+
+// Keep enough music buffered that Claude can be slow without the station falling silent.
+function maybeRefillAhead() {
+  if (!queue.length || autoRefilling) return;
+  if (Date.now() - lastRefillAt < REFILL_BACKOFF_MS) return;
+  const remainingTracks = queue.length - queueIdx - 1;
+  const bufferedTracks = queue.length - queueIdx;
+  if (bufferedTracks >= MAX_BUFFER_TRACKS) return;
+  const dur = musicAudio.duration || 0;
+  const cur = musicAudio.currentTime || 0;
+  const lastTrackIsPlaying = queueIdx >= queue.length - 1;
+  const nearLastTrackEnd = lastTrackIsPlaying && dur > 0 && (dur - cur) <= REFILL_LEAD_S;
+  if (remainingTracks < REFILL_LOW_WATER_TRACKS || nearLastTrackEnd) autoRefill();
+}
+
+function renderQueue() {
+  // Queue remains internal; upcoming tracks are not shown on the page.
+}
+
+function normalizeTrackText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKC')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function trackIdentity(track) {
+  const title = normalizeTrackText(track?.title || track?.query || '');
+  const artist = normalizeTrackText(track?.artist || '');
+  return artist ? `${title}::${artist}` : title;
+}
+
+function autoRefill() {
+  if (autoRefilling) return;
+  lastRefillAt = Date.now();
+  autoRefilling = true;
+  const previousIndex = queue.length - 1;
+  fetch('/api/radio/refill', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      programId: currentProgramId,
+      sessionTitle: sessionTitleEl.textContent || '',
+      currentTrack: queue[queueIdx] || null,
+      previousTrack: queue[previousIndex] || null,
+      previousIndex,
+      queue: queue.map(({ query, title, artist }) => ({ query, title, artist })),
+      queueLength: queue.length,
+      djLanguage,
+    }),
+  })
+    .catch(err => {
+      console.error(err);
+      lastRefillAt = Date.now();
+    })
+    .finally(() => { autoRefilling = false; });
+}
+
+function playTrack(track) {
+  metaName.textContent = track.title || track.query;
+  metaSub.textContent = track.artist ? `Now Playing · ${track.artist}` : 'Now Playing';
+  if (track.artist) {
+    metaSourceText.textContent = track.title + ' — ' + track.artist;
+    metaSource.style.display = 'inline-flex';
+  } else {
+    metaSourceText.textContent = '';
+    metaSource.style.display = 'none';
+  }
+  musicAudio.src = track.streamUrl;
+  musicAudio.volume = (!ttsAudio.paused && !ttsAudio.ended) ? duckedMusicVolume() : baseMusicVolume;
+  musicAudio.play().catch(console.error);
+}
+
+function playNext() {
+  if (queueIdx < queue.length - 1) {
+    const spokenDuringOutro = segueStarted;
+    queueIdx++;
+    segueStarted = false;
+    renderQueue();
+    const track = queue[queueIdx];
+    const beforeTrackSegments = findSegments(segment =>
+      segment.position === 'before_track' &&
+      segment.trackIndex === queueIdx
+    );
+    if (spokenDuringOutro) {
+      // Claudio already talked over the outro. If still talking, let the track follow the voice.
+      if (!ttsAudio.paused && !ttsAudio.ended) {
+        ttsAudio.addEventListener('ended', () => playTrack(track), { once: true });
+      } else {
+        playTrack(track);
+      }
+    } else if (beforeTrackSegments.length) {
+      speakSegmentSequence(beforeTrackSegments, () => playTrack(track));
+    } else if (track.introTtsUrl) {
+      // Fallback (short song / seek): no outro segue happened, so talk now then play.
+      speakSegment(track.introTranscript, track.introTtsUrl, () => playTrack(track));
+    } else {
+      playTrack(track);
+    }
+    maybeRefillAhead();
+    return true;
+  }
+  autoRefill();
+  return false;
+}
+
+function enqueueAndPlay(tracks) {
+  if (!tracks?.length) return;
+  const wasEmpty = !musicAudio.src || musicAudio.ended;
+  const existingKeys = new Set(queue.map(trackIdentity).filter(Boolean));
+  const existingUrls = new Set(queue.map(track => track.streamUrl).filter(Boolean));
+  const freshTracks = tracks.filter(track => {
+    const key = trackIdentity(track);
+    const url = track.streamUrl || '';
+    if ((key && existingKeys.has(key)) || (url && existingUrls.has(url))) return false;
+    if (key) existingKeys.add(key);
+    if (url) existingUrls.add(url);
+    return true;
+  });
+  if (!freshTracks.length) return;
+  queue = [...queue, ...freshTracks];
+  renderQueue();
+  if (wasEmpty) {
+    segueStarted = false;
+    queueIdx = queue.length - freshTracks.length;
+    playTrack(queue[queueIdx]);
+  }
+  maybeRefillAhead();
+}
+
+function normalizeIncomingSegments(msg) {
+  if (Array.isArray(msg.segments) && msg.segments.length) return msg.segments;
+  const segments = [];
+  const transcript = msg.transcript || '';
+  if (transcript || msg.ttsUrl) {
+    segments.push({
+      id: `legacy_open_${Date.now()}`,
+      type: msg.mode === 'speech-only' ? 'quick_touch' : 'cold_open',
+      position: msg.mode === 'speech-only' ? 'immediate' : 'before_track',
+      trackIndex: 0,
+      text: transcript,
+      ttsUrl: msg.ttsUrl,
+      status: msg.ttsUrl ? 'ready' : 'silent',
+    });
+  }
+  (msg.tracks || []).forEach((track, i) => {
+    if (i > 0 && track.introTtsUrl) {
+      segments.push({
+        id: track.segmentId || `legacy_bridge_${Date.now()}_${i}`,
+        type: 'bridge',
+        position: 'between_tracks',
+        afterTrackIndex: i - 1,
+        beforeTrackIndex: i,
+        text: track.introTranscript || '',
+        ttsUrl: track.introTtsUrl,
+        status: 'ready',
+      });
+    }
+  });
+  return segments;
+}
+
+function offsetSegmentsForQueue(segments, queueStart) {
+  return segments.map(segment => ({
+    ...segment,
+    trackIndex: Number.isInteger(segment.trackIndex) ? segment.trackIndex + queueStart : segment.trackIndex,
+    afterTrackIndex: Number.isInteger(segment.afterTrackIndex) ? segment.afterTrackIndex + queueStart : segment.afterTrackIndex,
+    beforeTrackIndex: Number.isInteger(segment.beforeTrackIndex) ? segment.beforeTrackIndex + queueStart : segment.beforeTrackIndex,
+  }));
+}
+
+/* ── WebSocket ────────────────────────────────────────────────────── */
+let ws;
+function connectWS() {
+  ws = new WebSocket(`ws://${location.host}/stream`);
+  ws.onopen = () => console.log('[ws] connected');
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  ws.onerror = () => ws.close();
+  ws.onmessage = e => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+    handleWsMessage(msg);
+  };
+}
+
+function handleWsMessage(msg) {
+  if (msg.type === 'program-start') {
+    currentProgramId = msg.programId || currentProgramId;
+    if (msg.sessionTitle) sessionTitleEl.textContent = msg.sessionTitle;
+    if (msg.stationName || msg.programName) {
+      metaSub.textContent = [msg.stationName, msg.programName].filter(Boolean).join(' · ');
+    }
+    resetProgramClock();
+    const tracks = msg.tracks || [];
+    const incomingSegments = offsetSegmentsForQueue(normalizeIncomingSegments(msg), queue.length);
+    scriptSegments = [...scriptSegments, ...incomingSegments];
+    if (tracks.length) enqueueAndPlay(tracks);
+    const immediateSegments = findSegments(segment =>
+      segment.position === 'immediate' ||
+      (segment.position === 'before_track' && (segment.trackIndex ?? 0) === queueIdx)
+    );
+    if (immediateSegments.length) speakSegmentSequence(immediateSegments);
+    return;
+  }
+
+  if (msg.type === 'tracks-ready') {
+    currentProgramId = msg.programId || currentProgramId;
+    autoRefilling = false;
+    if (msg.tracks?.length) enqueueAndPlay(msg.tracks);
+    return;
+  }
+
+  if (msg.type === 'segment-ready') {
+    currentProgramId = msg.programId || currentProgramId;
+    const incomingSegments = normalizeIncomingSegments(msg);
+    scriptSegments = [...scriptSegments, ...incomingSegments];
+    maybeStartOutroTalk();
+    return;
+  }
+
+  if (msg.type === 'job-status' && msg.status === 'failed') {
+    if (msg.jobType === 'music_refill') {
+      autoRefilling = false;
+      lastRefillAt = Date.now();
+    }
+    if (msg.jobType === 'program_start') {
+      setRadioStatus('Paused');
+      metaSub.textContent = 'Could not start Claudio FM';
+    }
+    return;
+  }
+
+  if (msg.type === 'now-playing') {
+    if (msg.sessionTitle) sessionTitleEl.textContent = msg.sessionTitle;
+    if (msg.stationName || msg.programName) {
+      metaSub.textContent = [msg.stationName, msg.programName].filter(Boolean).join(' · ');
+    }
+
+    // Capture playback state BEFORE enqueueing changes it.
+    const musicLive = !!musicAudio.src && !musicAudio.paused && !musicAudio.ended;
+    const programmed = msg.trigger === 'scheduler' || msg.trigger === 'autoRefill';
+    const tracks = msg.tracks || [];
+    const queueStart = queue.length;
+    const incomingSegments = offsetSegmentsForQueue(normalizeIncomingSegments(msg), queueStart);
+
+    if (programmed && musicLive) {
+      // A programmed update arrived mid-song. Don't talk over its heart — deliver at the seam.
+      const shiftedSegments = incomingSegments.map(segment => {
+        if (tracks.length && segment.position === 'before_track' && segment.trackIndex === queueStart) {
+          return {
+            ...segment,
+            position: 'between_tracks',
+            afterTrackIndex: Math.max(0, queueStart - 1),
+            beforeTrackIndex: queueStart,
+            resetClockOnSpeak: true,
+          };
+        }
+        return segment;
+      });
+      scriptSegments = [...scriptSegments, ...shiftedSegments];
+      if (tracks.length) {
+        enqueueAndPlay(tracks);
+      }
+    } else {
+      // Fresh start (talk-up over the opening track) or a live call-in: act now.
+      if (!musicLive) resetProgramClock();
+      scriptSegments = [...scriptSegments, ...incomingSegments];
+      if (tracks.length) enqueueAndPlay(tracks);
+      const immediateSegments = findSegments(segment =>
+        segment.position === 'immediate' ||
+        (segment.position === 'before_track' && (segment.trackIndex ?? 0) === queueIdx)
+      );
+      if (immediateSegments.length) speakSegmentSequence(immediateSegments);
+      else if (msg.status === 'speaking') setRadioStatus('Speaking');
+    }
+  }
+
+  if (msg.type === 'control') {
+    if (msg.action === 'next')   playNext();
+    if (msg.action === 'pause')  musicAudio.pause();
+    if (msg.action === 'resume') musicAudio.play().catch(console.error);
+    if (msg.action === 'volume') {
+      setMusicVolume(baseMusicVolume + msg.delta / 100);
+    }
+  }
+}
+
+connectWS();
+
+/* ── Chat ─────────────────────────────────────────────────────────── */
+function openRequestLine() {
+  chatToggle.classList.add('hidden');
+  chatBar.classList.remove('hidden');
+  chatInput.focus();
+}
+
+function closeRequestLine() {
+  chatBar.classList.add('hidden');
+  chatToggle.classList.remove('hidden');
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+}
+
+chatToggle.addEventListener('click', e => {
+  e.stopPropagation();
+  openRequestLine();
+});
+
+chatBar.addEventListener('click', e => {
+  e.stopPropagation();
+});
+
+document.addEventListener('click', () => {
+  if (!chatBar.classList.contains('hidden')) closeRequestLine();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !chatBar.classList.contains('hidden')) closeRequestLine();
+});
+
+async function requestChat(message, { showUserTurn = true } = {}) {
+  if (showUserTurn) addUserTurn(message);
+  await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, djLanguage }),
+  });
+}
+
+async function patchCallerIntoStation(text) {
+  addCallerTurn(text);
+  let callerAudio = null;
+  try {
+    callerAudio = await requestCallerTts(text);
+  } catch (err) {
+    console.error('[caller-tts]', err);
+  }
+
+  await playRequestLineConnect();
+  if (callerAudio?.ttsUrl) {
+    await playCallerVoice(callerAudio.ttsUrl);
+  } else {
+    restoreMusicVolume();
+    afterTtsFinished();
+  }
+  await requestChat(text, { showUserTurn: false });
+}
+
+async function startRadio() {
+  if (startingRadio || musicAudio.src) return;
+  startingRadio = true;
+  playBtn.disabled = true;
+  setRadioStatus('On Air');
+  metaSub.textContent = 'Tuning Claudio FM…';
+  try {
+    await requestChat(buildStartMessage(), { showUserTurn: false });
+  } catch (err) {
+    console.error('[start-radio]', err);
+    setRadioStatus('Paused');
+    metaSub.textContent = 'Could not start Claudio FM';
+  } finally {
+    playBtn.disabled = false;
+    startingRadio = false;
+  }
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  closeRequestLine();
+  chatSend.disabled = true;
+  try {
+    await patchCallerIntoStation(text);
+  } catch (err) { console.error('[chat]', err); }
+  finally { chatSend.disabled = false; }
+}
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 84) + 'px';
+});
+chatSend.addEventListener('click', sendMessage);
+
+/* ── Skin ─────────────────────────────────────────────────────────── */
+const skinControl = document.getElementById('skinControl');
+let currentSkin = localStorage.getItem('claudio:skin') || 'default';
+
+function applySkin(name) {
+  currentSkin = name === 'glass' ? 'glass' : 'default';
+  if (currentSkin === 'glass') {
+    document.documentElement.dataset.skin = 'glass';
+  } else {
+    delete document.documentElement.dataset.skin;
+  }
+  localStorage.setItem('claudio:skin', currentSkin);
+  skinControl.querySelectorAll('button').forEach(btn => {
+    const active = btn.dataset.skinName === currentSkin;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  });
+}
+
+skinControl.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-skin-name]');
+  if (!btn) return;
+  applySkin(btn.dataset.skinName);
+});
+
+applySkin(currentSkin);
+
+/* ── Tweaks ───────────────────────────────────────────────────────── */
+document.getElementById('tweaksToggle').addEventListener('click', () => {
+  document.getElementById('tweaks').classList.toggle('visible');
+});
+
+inDjVolume.addEventListener('input', () => {
+  setDjVolume(Number(inDjVolume.value) / 100);
+});
+
+inMusicVolume.addEventListener('input', () => {
+  setMusicVolume(Number(inMusicVolume.value) / 100);
+});
+
+djLanguageControl.addEventListener('click', e => {
+  const button = e.target.closest('button[data-lang]');
+  if (!button) return;
+  setDjLanguage(button.dataset.lang);
+});
+
+document.getElementById('swatches').addEventListener('click', e => {
+  const sw = e.target.closest('.swatch');
+  if (!sw) return;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  sw.classList.add('active');
+  document.getElementById('cardHeader').style.background = sw.dataset.bg;
+});
+
+['inBlueHue','inVioletHue'].forEach(id => {
+  const el = document.getElementById(id);
+  const lbl = document.getElementById(id === 'inBlueHue' ? 'lblBlueHue' : 'lblVioletHue');
+  const blob = document.querySelector(id === 'inBlueHue' ? '.fluid.blue' : '.fluid.violet');
+  el.addEventListener('input', () => {
+    lbl.textContent = el.value + '°';
+    const h = el.value;
+    if (id === 'inBlueHue') {
+      blob.style.background = `radial-gradient(circle at 40% 40%, oklch(0.62 0.17 ${h}) 0%, oklch(0.48 0.18 ${+h+3}) 40%, oklch(0.3 0.12 ${+h+5} / 0) 72%)`;
+    } else {
+      blob.style.background = `radial-gradient(circle, oklch(0.58 0.19 ${h}) 0%, oklch(0.42 0.2 ${+h-5}) 42%, oklch(0.28 0.14 ${+h-10} / 0) 72%)`;
+    }
+  });
+});
+</script>
+</body>
+</html>
